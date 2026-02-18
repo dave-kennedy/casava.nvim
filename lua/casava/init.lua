@@ -1,6 +1,12 @@
-local M = {}
+local M = {
+    delimiter = ','
+}
 
-function M.align_columns()
+function M.align_columns(delimiter)
+    if delimiter ~= nil and delimiter ~= '' then
+        M.delimiter = delimiter
+    end
+
     local col_lens = {}
     local num_lines = vim.fn.line('$')
     local num_fields = 0
@@ -43,7 +49,7 @@ function M.align_columns()
             if field_num == num_fields then
                 new_line = new_line .. field .. padding
             else
-                new_line = new_line .. field .. padding .. ','
+                new_line = new_line .. field .. padding .. M.delimiter
             end
         end
 
@@ -80,7 +86,7 @@ end
 
 function M.split_fields(str)
     local quote_indices = M.find_all(str, '"')
-    local delim_indices = M.find_all(str, ',')
+    local delim_indices = M.find_all(str, M.delimiter)
 
     local fields = {}
     local field_start = 1
@@ -110,9 +116,9 @@ function M.trim(str)
 end
 
 function M.setup()
-    vim.api.nvim_create_user_command('CsvAlign', function ()
-        M.align_columns()
-    end, {})
+    vim.api.nvim_create_user_command('CsvAlign', function (opts)
+        M.align_columns(opts.args)
+    end, { nargs = '?' })
 end
 
 return M
