@@ -11,9 +11,9 @@ function M.align_columns(delimiter)
     local num_lines = vim.fn.line('$')
     local num_fields = 0
 
-    for line_num = 1, num_lines, 1 do
+    for line_num = 1, num_lines do
         local line = vim.fn.getline(line_num)
-        local fields = M.split_fields(line)
+        local fields = M.split_fields(line, M.delimiter, true)
 
         if line_num == 1 then
             num_fields = #fields
@@ -32,10 +32,10 @@ function M.align_columns(delimiter)
         end
     end
 
-    for line_num = 1, num_lines, 1 do
+    for line_num = 1, num_lines do
         local line = vim.fn.getline(line_num)
         local new_line = ''
-        local fields = M.split_fields(line)
+        local fields = M.split_fields(line, M.delimiter, true)
 
         for field_num, field in ipairs(fields) do
             local col_len = col_lens[field_num]
@@ -84,9 +84,28 @@ function M.is_quoted(quote_indices, delim_index)
     return false
 end
 
-function M.split_fields(str)
+function M.replace_delimiter(new_delimiter)
+    if new_delimiter == nil or new_delimiter == '' then
+        vim.notify('New delimiter is required', vim.log.levels.ERROR)
+        return
+    end
+
+    local old_delimiter = M.delimiter
+    M.delimiter = new_delimiter
+
+    local num_lines = vim.fn.line('$')
+
+    for line_num = 1, num_lines do
+        local line = vim.fn.getline(line_num)
+        local fields = M.split_fields(line, old_delimiter, false)
+        local new_line = table.concat(fields, M.delimiter)
+        vim.fn.setline(line_num, new_line)
+    end
+end
+
+function M.split_fields(str, delimiter, trim)
     local quote_indices = M.find_all(str, '"')
-    local delim_indices = M.find_all(str, M.delimiter)
+    local delim_indices = M.find_all(str, delimiter)
 
     local fields = {}
     local field_start = 1
@@ -96,13 +115,23 @@ function M.split_fields(str)
 
         if not delim_index then
             -- Last field
-            local field = M.trim(string.sub(str, field_start))
+            local field = string.sub(str, field_start)
+
+            if trim then
+                field = M.trim(field)
+            end
+
             table.insert(fields, field)
         elseif M.is_quoted(quote_indices, delim_index) then
             -- Delimiter is between quotes, skip it
         else
             local field_end = delim_index - 1
-            local field = M.trim(string.sub(str, field_start, field_end))
+            local field = string.sub(str, field_start, field_end)
+
+            if trim then
+                field = M.trim(field)
+            end
+
             table.insert(fields, field)
             field_start = delim_index + 1
         end
@@ -119,6 +148,10 @@ function M.setup()
     vim.api.nvim_create_user_command('CsvAlign', function (opts)
         M.align_columns(opts.args)
     end, { nargs = '?' })
+
+    vim.api.nvim_create_user_command('CsvReplaceDelimiter', function (opts)
+        M.replace_delimiter(opts.args)
+    end, { nargs = 1 })
 end
 
 return M
