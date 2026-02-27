@@ -140,17 +140,27 @@ function M.split_fields(str, delimiter, trim)
     return fields
 end
 
+function M.translate_escapes(str)
+    local escapes = {
+        ['\\t'] = '\t',
+        ['\\n'] = '\n',
+        ['\\\\'] = '\\'
+    }
+
+    return string.gsub(str, '\\\\?.', escapes)
+end
+
 function M.trim(str)
     return string.gsub(str, '^%s*(.-)%s*$', '%1')
 end
 
 function M.setup()
     vim.api.nvim_create_user_command('CsvAlign', function (opts)
-        M.align_columns(opts.args)
+        M.align_columns(M.translate_escapes(opts.args))
     end, { nargs = '?' })
 
     vim.api.nvim_create_user_command('CsvReplaceDelimiter', function (opts)
-        M.replace_delimiter(opts.args)
+        M.replace_delimiter(M.translate_escapes(opts.args))
     end, { nargs = 1 })
 end
 
