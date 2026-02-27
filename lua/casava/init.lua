@@ -45,7 +45,7 @@ function M.align_columns(delimiter)
             end
 
             if field_num == num_fields then
-                new_line = new_line .. field .. padding
+                new_line = new_line .. field
             else
                 new_line = new_line .. field .. padding .. delimiter
             end
