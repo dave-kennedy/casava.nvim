@@ -7,15 +7,15 @@ A CSV file formatter for Neovim, written in Lua.
 Say your active buffer contains this:
 
 ```
-Name, Tagline, Score
-Gypsy, They're going to kill Joel!, 1
-Joel Robinson, "If you don't understand it, shoot it.", 300
-"Robot, Crow T.", I use cyber-based bubble memory, 180
-Tom Servo, You are how you look. Me? I'm a gumball machine!, "714,083"
-"Nelson, Mike", "Please be careful, this will be boring.", "1,234"
+Name,Tagline,Score
+Gypsy,They're going to kill Joel!,1
+Joel Robinson,"If you don't understand it, shoot it.",300
+"Robot, Crow T.",I use cyber-based bubble memory,180
+Tom Servo,You are how you look. Me? I'm a gumball machine!,"714,083"
+"Nelson, Mike","Please be careful, this will be boring.","1,234"
 ```
 
-Just call `:CsvAlign` and voila:
+`:CsvAlign {arg}` aligns the columns on the provided delimiter:
 
 ```csv
 Name            ,Tagline                                         ,Score
@@ -26,6 +26,26 @@ Tom Servo       ,You are how you look. Me? I'm a gumball machine!,"714,083"
 "Nelson, Mike"  ,"Please be careful, this will be boring."       ,"1,234"
 ```
 
+> The argument is optional and defaults to `','`.
+
+`:CsvReplaceDelimiter {arg1} {arg2}` replaces the first delimiter with the
+second. For example, `:CsvReplaceDelimiter , |` produces:
+
+```csv
+Name|Tagline|Score
+Gypsy|They're going to kill Joel!|1
+Joel Robinson|"If you don't understand it, shoot it."|300
+"Robot, Crow T."|I use cyber-based bubble memory|180
+Tom Servo|You are how you look. Me? I'm a gumball machine!|"714,083"
+"Nelson, Mike"|"Please be careful, this will be boring."|"1,234"
+```
+
+Escape sequences are supported. For example, `:CsvReplaceDelimiter , \t`
+converts a comma-delimited file to a tab-delimited file.
+
+> The second argument is optional. If only one argument is provided, the first
+  defaults to `','`.
+
 ## Install
 
 With [lazy.nvim](https://lazy.folke.io/) prior to v11:
@@ -35,7 +55,7 @@ require('lazy').setup({
     {
         'dave-kennedy/casava.nvim',
         config = function ()
-            require('casava')
+            require('casava').setup(opts)
         end
     }
 })
@@ -48,9 +68,7 @@ require('lazy').setup({
     spec = {
         {
             'dave-kennedy/casava.nvim',
-            config = function ()
-                require('casava')
-            end
+            opts = {}
         }
     }
 })
@@ -66,6 +84,16 @@ return {
 }
 ```
 
+### Options
+
+#### delimiter
+
+Default: `','`
+
+The default delimiter to use when `:CsvAlign` is called without an argument, or
+the delimiter to replace when `:CsvReplaceDelimiter` is called with only one
+argument.
+
 ## Development
 
 Clone this repo, then change `'dave-kennedy/casava.nvim'` in your plugin spec
@@ -73,8 +101,5 @@ to `dir = 'path/to/casava.nvim'`.
 
 ## TODO
 
-* Add config options
-    * Alternate escape characters
-    * Alternate field delimiters
 * Sort on column
 * Unit tests
