@@ -3,9 +3,7 @@ local M = {
 }
 
 function M.align_columns(delimiter)
-    if delimiter ~= nil and delimiter ~= '' then
-        M.delimiter = delimiter
-    end
+    delimiter = delimiter or M.delimiter
 
     local col_lens = {}
     local num_lines = vim.fn.line('$')
@@ -13,7 +11,7 @@ function M.align_columns(delimiter)
 
     for line_num = 1, num_lines do
         local line = vim.fn.getline(line_num)
-        local fields = M.split_fields(line, M.delimiter, true)
+        local fields = M.split_fields(line, delimiter, true)
 
         if line_num == 1 then
             num_fields = #fields
@@ -35,7 +33,7 @@ function M.align_columns(delimiter)
     for line_num = 1, num_lines do
         local line = vim.fn.getline(line_num)
         local new_line = ''
-        local fields = M.split_fields(line, M.delimiter, true)
+        local fields = M.split_fields(line, delimiter, true)
 
         for field_num, field in ipairs(fields) do
             local col_len = col_lens[field_num]
@@ -49,7 +47,7 @@ function M.align_columns(delimiter)
             if field_num == num_fields then
                 new_line = new_line .. field .. padding
             else
-                new_line = new_line .. field .. padding .. M.delimiter
+                new_line = new_line .. field .. padding .. delimiter
             end
         end
 
@@ -84,21 +82,18 @@ function M.is_quoted(quote_indices, delim_index)
     return false
 end
 
-function M.replace_delimiter(new_delimiter)
-    if new_delimiter == nil or new_delimiter == '' then
-        vim.notify('New delimiter is required', vim.log.levels.ERROR)
-        return
+function M.replace_delimiter(old_delimiter, new_delimiter)
+    if new_delimiter == nil then
+        new_delimiter = old_delimiter
+        old_delimiter = M.delimiter
     end
-
-    local old_delimiter = M.delimiter
-    M.delimiter = new_delimiter
 
     local num_lines = vim.fn.line('$')
 
     for line_num = 1, num_lines do
         local line = vim.fn.getline(line_num)
         local fields = M.split_fields(line, old_delimiter, false)
-        local new_line = table.concat(fields, M.delimiter)
+        local new_line = table.concat(fields, new_delimiter)
         vim.fn.setline(line_num, new_line)
     end
 end
@@ -140,7 +135,11 @@ function M.split_fields(str, delimiter, trim)
     return fields
 end
 
-function M.translate_escapes(str)
+function M.translate_args(str)
+    if str == nil or str == '' then
+        return nil
+    end
+
     local escapes = {
         ['\\t'] = '\t',
         ['\\n'] = '\n',
@@ -156,12 +155,12 @@ end
 
 function M.setup()
     vim.api.nvim_create_user_command('CsvAlign', function (opts)
-        M.align_columns(M.translate_escapes(opts.args))
+        M.align_columns(M.translate_args(opts.fargs[1]))
     end, { nargs = '?' })
 
     vim.api.nvim_create_user_command('CsvReplaceDelimiter', function (opts)
-        M.replace_delimiter(M.translate_escapes(opts.args))
-    end, { nargs = 1 })
+        M.replace_delimiter(M.translate_args(opts.fargs[1]), M.translate_args(opts.fargs[2]))
+    end, { nargs = '+' })
 end
 
 return M
