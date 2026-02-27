@@ -153,7 +153,11 @@ function M.trim(str)
     return string.gsub(str, '^%s*(.-)%s*$', '%1')
 end
 
-function M.setup()
+function M.setup(opts)
+    if opts.delimiter then
+        M.delimiter = opts.delimiter
+    end
+
     vim.api.nvim_create_user_command('CsvAlign', function (opts)
         M.align_columns(M.translate_args(opts.fargs[1]))
     end, { nargs = '?' })
